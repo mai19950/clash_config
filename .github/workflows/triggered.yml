@@ -12,10 +12,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Request and save URL content
-        run: |
-          curl -L -o clash.yaml "https://api.dler.io/sub?target=clash&new_name=true&url=https%3A%2F%2Fgithub.com%2Fmai19950%2Ffree_site%2Fraw%2Frefs%2Fheads%2Fmain%2Fv2ray%2Fbase64%7Chttps%3A%2F%2Fraw.githubusercontent.com%2Fripaojiedian%2Ffreenode%2Fmain%2Fsub%7Chttps%3A%2F%2Ftrojan.fxxk.dedyn.io%2Fauto&insert=false&config=https%3A%2F%2Fraw.githubusercontent.com%2FACL4SSR%2FACL4SSR%2Fmaster%2FClash%2Fconfig%2FACL4SSR_Online_Full_AdblockPlus.ini"
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
 
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Run Python script
+        run: |
+          python main.py
       - name: Commit changes
         run: |
           git config --global user.name "mai19950"
