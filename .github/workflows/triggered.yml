@@ -8,6 +8,11 @@ on:
 jobs:
   update-and-commit:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      # issues: write
+      # repository_dispatch: write  # 检查此权限是否适用于触发 repository_dispatch
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -25,16 +30,18 @@ jobs:
       - name: Run Python script
         run: |
           python main.py
+
       - name: Commit changes
         run: |
           git config --global user.name "mai19950"
           git config --global user.email "underdog-95@outlook.com"
-          # 添加更改
           git add .
-          git commit -m "Update node at $(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')"
-          git pull --rebase origin main
-          git push origin main
+          if ! git diff --cached --quiet; then
+            git commit -m "Update node at $(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')"
+            git pull --rebase origin main
+            git push origin main
+          else
+            echo "No changes to commit."
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    permissions:
-      contents: write  # 确保 GitHub Actions 有权限进行推送
