@@ -1,0 +1,31 @@
+name: Triggered Workflow
+
+on:
+  repository_dispatch:
+    types: [update]
+  workflow_dispatch:
+
+jobs:
+  update-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Request and save URL content
+        run: |
+          curl -L -o clash.yaml "https://api.dler.io/sub?target=clash&new_name=true&url=https%3A%2F%2Fgithub.com%2Fmai19950%2Ffree_site%2Fraw%2Frefs%2Fheads%2Fmain%2Fv2ray%2Fbase64%7Chttps%3A%2F%2Fraw.githubusercontent.com%2Fripaojiedian%2Ffreenode%2Fmain%2Fsub%7Chttps%3A%2F%2Ftrojan.fxxk.dedyn.io%2Fauto&insert=false&config=https%3A%2F%2Fraw.githubusercontent.com%2FACL4SSR%2FACL4SSR%2Fmaster%2FClash%2Fconfig%2FACL4SSR_Online_Full_AdblockPlus.ini"
+
+      - name: Commit changes
+        run: |
+          git config --global user.name "mai19950"
+          git config --global user.email "underdog-95@outlook.com"
+          # 添加更改
+          git add .
+          git commit -m "Update node at $(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')"
+          git pull --rebase origin main
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    permissions:
+      contents: write  # 确保 GitHub Actions 有权限进行推送
