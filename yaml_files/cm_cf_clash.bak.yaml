@@ -1,0 +1,42 @@
+# Clash 配置文件
+
+# 混合端口配置，支持多协议代理（如 HTTP 和 SOCKS5）
+# 这个端口是客户端用来连接 Clash 代理服务的端口
+mixed-port: 7890
+
+# 是否允许局域网设备访问 Clash 代理服务
+# true: 允许局域网设备访问，false: 只允许本机访问
+allow-lan: true
+
+# 代理模式设置
+# Rule: 根据规则（如域名、IP 地址等）决定流量走代理还是直连
+# 其他模式：Global（所有流量都走代理）、Direct（所有流量都不走代理）
+mode: Rule
+
+# 日志级别设置
+# info: 一般信息级别，记录正常操作的信息
+# 可选日志级别：debug（调试信息）、info（正常信息）、warning（警告）、error（错误信息）
+log-level: info
+
+# 外部控制接口配置，用于远程控制 Clash 运行
+# 通过该接口可以进行代理开关、流量统计、配置更新等操作
+# 0.0.0.0: 表示监听所有网络接口，9090: 端口号
+external-controller: 0.0.0.0:9090
+
+# DNS 配置
+dns:
+  # 启用 DNS 服务
+  enabled: true
+
+  # 配置主 DNS 服务器列表，优先使用这些 DNS 服务器
+  nameserver:
+    - 119.29.29.29  # 腾讯 DNS
+    - 223.5.5.5     # 阿里云 DNS
+
+  # 配置备用 DNS 服务器，当主 DNS 无法解析时使用
+  fallback:
+    - 8.8.8.8       # Google 公共 DNS
+    - 8.8.4.4       # Google 公共 DNS
+    # TLS 加密的 DNS 服务器，提供更安全的 DNS 解析
+    - tls://1.0.0.1:853  # Cloudflare DNS over TLS
+    - tls://dns.google:853  # Google DNS over TLS

@@ -1,0 +1,28 @@
+# Clash 配置文件
+
+# HTTP 代理端口配置
+# Clash 会监听在该端口，客户端通过这个端口连接 Clash 进行 HTTP 代理
+port: 7890
+
+# SOCKS5 代理端口配置
+# Clash 会监听在该端口，客户端通过这个端口连接 Clash 进行 SOCKS5 代理
+socks-port: 7891
+
+# 是否允许局域网设备访问 Clash 代理服务
+# true: 允许局域网设备访问，false: 只允许本机访问
+allow-lan: true
+
+# 代理模式设置
+# Rule: 根据规则（如域名、IP 地址等）决定流量走代理还是直连
+# 其他模式：Global（所有流量都走代理）、Direct（所有流量都不走代理）
+mode: Rule
+
+# 日志级别设置
+# info: 一般信息级别，记录正常操作的信息
+# 可选日志级别：debug（调试信息）、info（正常信息）、warning（警告）、error（错误信息）
+log-level: info
+
+# 外部控制接口配置，用于远程控制 Clash 运行
+# 通过该接口可以进行代理开关、流量统计、配置更新等操作
+# 127.0.0.1: 表示仅允许本机访问该控制接口，9090: 控制接口的端口号
+external-controller: 127.0.0.1:9090
