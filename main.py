@@ -89,7 +89,7 @@ class ClashConfig:
   @classmethod
   def run(cls):
     cls.configs = cls.read_yaml('./yaml_files/configs.yaml')
-    # rules = cls.read_yaml('./yaml_files/rules.yaml')
+    # rules = cls.read_yaml('./yaml_files/custom_rules.yaml')
     proxy_groups = cls.read_yaml('./yaml_files/proxy_groups.yaml')["proxy-groups"]
 
     for url in cls.urls:
@@ -108,7 +108,7 @@ class ClashConfig:
       proxy_groups[2]["proxies"] = cls.o_node.remarks
       proxy_groups[3]["proxies"] = cls.o_node.remarks
       proxy_groups[4]["proxies"] = cls.o_node.remarks
-      # cls.configs["rules"] = cls.read_yaml('./yaml_files/rules.yaml')["rules"]
+      cls.configs["rules"] = cls.read_yaml('./yaml_files/custom_rules.yaml')["rules"]
     if cls.o_node.HK_remarks:
       proxy_groups[26]["proxies"] = cls.o_node.HK_remarks
     if cls.o_node.JP_remarks:
@@ -129,7 +129,8 @@ class ClashConfig:
     yaml_str = re.sub(r'^(.*?-)[\s\r\n]+', r'\1 ', yaml_str, flags=re.M)
     with open('clash.yaml', "w+", encoding="utf-8") as f:
       f.write(yaml_str)
-    os.system("cat yaml_files/rules.yaml >> clash.yaml")
+    # os.system("cat yaml_files/rules.yaml >> clash.yaml")
+    os.system("tail -n +2 yaml_files/rules.yaml >> clash.yaml")
 
 
 

@@ -2,7 +2,7 @@ import base64
 import json
 import re
 import urllib.parse
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
 
 
 class ParseNode:
@@ -168,12 +168,19 @@ class CollectNodes(ParseNode):
   SG_remarks = [] # 狮城节点
   KR_remarks = [] # 韩国节点
 
+  custom_remarks = {}
+
   node_list = [ "nodes", "HK_nodes", "JP_nodes", "US_nodes", "TW_nodes", "SG_nodes", "KR_nodes" ]
   remark_list = [ "remarks", "HK_remarks", "JP_remarks", "US_remarks", "TW_remarks", "SG_remarks", "KR_remarks" ]
 
   keys_map = {}
 
   parse_node = lambda x: x
+
+  def parse_custom_group(self, data: List[Tuple[str]], node_remark: str) -> None:
+    for remark, pattern in data:
+      if pattern in node_remark:
+        self.custom_remarks.setdefault(remark, []).append(node_remark)
 
   def parse(self, urls: list):
     for url in urls:
@@ -213,22 +220,22 @@ class CollectNodes(ParseNode):
       self.remarks.append(remark_with)
       
       if re.search(r'HK|香|港|香港|🇭🇰', remark_with, flags=re.I):
-        self.HK_nodes.append(node_str)
+        # self.HK_nodes.append(node_str)
         self.HK_remarks.append(remark_with)
       elif re.search(r'JP|日|日本|🇯🇵', remark_with, flags=re.I):
-        self.JP_nodes.append(node_str)
+        # self.JP_nodes.append(node_str)
         self.JP_remarks.append(remark_with)
       elif re.search(r'US|UM|美|美国|美國|🇺🇲', remark_with, flags=re.I):
-        self.US_nodes.append(node_str)
+        # self.US_nodes.append(node_str)
         self.US_remarks.append(remark_with)
       elif re.search(r'TW|台|臺|台湾|臺灣|🇨🇳|🇹🇼', remark_with, flags=re.I):
-        self.TW_nodes.append(node_str)
+        # self.TW_nodes.append(node_str)
         self.TW_remarks.append(remark_with)
       elif re.search(r'SG|新|狮城|獅城|新加坡|🇸🇬', remark_with, flags=re.I):
-        self.SG_nodes.append(node_str)
+        # self.SG_nodes.append(node_str)
         self.SG_remarks.append(remark_with)
       elif re.search(r'KR|韩|韩国|韓國|🇰🇷', remark_with, flags=re.I):
-        self.KR_nodes.append(node_str)
+        # self.KR_nodes.append(node_str)
         self.KR_remarks.append(remark_with)
         
     print(f"节点总数: {len(self.nodes)}\t"
