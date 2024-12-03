@@ -152,30 +152,32 @@ class ParseNode:
 
 
 class CollectNodes(ParseNode):
-  nodes = []  
-  HK_nodes = [] # 香港节点
-  JP_nodes = [] # 日本节点
-  US_nodes = [] # 美国节点
-  TW_nodes = [] # 台湾节点 
-  SG_nodes = [] # 狮城节点
-  KR_nodes = [] # 韩国节点
 
-  remarks = []  
-  HK_remarks = [] # 香港节点
-  JP_remarks = [] # 日本节点
-  US_remarks = [] # 美国节点
-  TW_remarks = [] # 台湾节点 
-  SG_remarks = [] # 狮城节点
-  KR_remarks = [] # 韩国节点
+  def __init__(self) -> None:
+    super().__init__()
+    self.nodes = []  
+    self.HK_nodes = [] # 香港节点
+    self.JP_nodes = [] # 日本节点
+    self.US_nodes = [] # 美国节点
+    self.TW_nodes = [] # 台湾节点 
+    self.SG_nodes = [] # 狮城节点
+    self.KR_nodes = [] # 韩国节点
 
-  custom_remarks = {}
+    self.remarks = []  
+    self.HK_remarks = [] # 香港节点
+    self.JP_remarks = [] # 日本节点
+    self.US_remarks = [] # 美国节点
+    self.TW_remarks = [] # 台湾节点 
+    self.SG_remarks = [] # 狮城节点
+    self.KR_remarks = [] # 韩国节点
 
-  node_list = [ "nodes", "HK_nodes", "JP_nodes", "US_nodes", "TW_nodes", "SG_nodes", "KR_nodes" ]
-  remark_list = [ "remarks", "HK_remarks", "JP_remarks", "US_remarks", "TW_remarks", "SG_remarks", "KR_remarks" ]
+    self.custom_remarks = {}
 
-  keys_map = {}
+    self.node_list = [ "nodes", "HK_nodes", "JP_nodes", "US_nodes", "TW_nodes", "SG_nodes", "KR_nodes" ]
+    self.remark_list = [ "remarks", "HK_remarks", "JP_remarks", "US_remarks", "TW_remarks", "SG_remarks", "KR_remarks" ]
 
-  parse_node = lambda x: x
+    self.keys_map = {}
+    self.parse_node = lambda x: x
 
   def parse_custom_group(self, data: List[Tuple[str]], node_remark: str) -> None:
     for remark, pattern in data:
@@ -238,13 +240,13 @@ class CollectNodes(ParseNode):
         # self.KR_nodes.append(node_str)
         self.KR_remarks.append(remark_with)
         
-    print(f"节点总数: {len(self.nodes)}\t"
-          f"HK: {len(self.HK_nodes)}\t"
-          f"JP: {len(self.JP_nodes)}\t"
-          f"US: {len(self.US_nodes)}\t"
-          f"TW: {len(self.TW_nodes)}\t"
-          f"SG: {len(self.SG_nodes)}\t"
-          f"KR: {len(self.KR_nodes)}")
+    print(f"节点总数: {len(self.remarks)}\t"
+          f"HK: {len(self.HK_remarks)}\t"
+          f"JP: {len(self.JP_remarks)}\t"
+          f"US: {len(self.US_remarks)}\t"
+          f"TW: {len(self.TW_remarks)}\t"
+          f"SG: {len(self.SG_remarks)}\t"
+          f"KR: {len(self.KR_remarks)}")
     return self
 
 

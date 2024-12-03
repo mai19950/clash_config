@@ -37,11 +37,26 @@ jobs:
           git config --global user.email "underdog-95@outlook.com"
           git add .
           if ! git diff --cached --quiet; then
-            git commit -m "Update node at $(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')"
+            commit_message="Update node at $(TZ='Asia/Shanghai' date +'%Y-%m-%d %H:%M:%S')"
+            echo "COMMIT_MESSAGE=$commit_message" >> $GITHUB_ENV
+            git commit -m "$commit_message"
             git pull --rebase origin main
             git push origin main
           else
             echo "No changes to commit."
           fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 推送到订阅仓库
+        if: env.COMMIT_MESSAGE
+        run: |
+          cd sub
+          git init --initial-branch=main
+          git add .
+          git commit -m "${{ env.COMMIT_MESSAGE }}"
+          git remote add origin "https://x-access-token:${{ secrets.PERSONAL_ACCESS_TOKEN }}@github.com/mai19950/maomao_sub.git"
+          git push -u origin main --force
+          rm -rf .git
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

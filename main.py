@@ -3,7 +3,8 @@ import os
 import re
 import requests
 import yaml
-from typing import Any, List, Dict, Optional, Union
+import csv
+from typing import Any, Callable, List, Dict, Optional, Union
 
 from parse_node import CollectNodes
 
@@ -35,11 +36,11 @@ class ClashConfig:
         print('解码错误：', e.args)
         return nodes
 
-  configs: dict = {}
+  # configs: dict = {}
+  # proxy_groups: dict = {}
+  urls_pools: list = []
   local_dir = 'local_nodes'
   o_node = CollectNodes()
-  with open("./urls.txt", "r", encoding="utf-8") as urls_path:
-    urls = urls_path.readlines()
 
   @classmethod
   def to_yaml(cls, data: Any, indent: int = 0) -> str:
@@ -87,51 +88,62 @@ class ClashConfig:
       return cls.get_scribe(url)
 
   @classmethod
-  def run(cls):
-    cls.configs = cls.read_yaml('./yaml_files/configs.yaml')
-    # rules = cls.read_yaml('./yaml_files/custom_rules.yaml')
+  def get_single_sub(cls, key: str, urls: List[str]) -> None:
+    print(f"订阅 {key} 有 {len(urls)} 个节点")
+    node_obj = CollectNodes().parse(urls)
+    configs = cls.read_yaml('./yaml_files/configs.yaml')
     proxy_groups = cls.read_yaml('./yaml_files/proxy_groups.yaml')["proxy-groups"]
+    if node_obj.nodes:
+      configs["proxies"] = node_obj.nodes
+      proxy_groups[1]["proxies"] = node_obj.remarks
+      proxy_groups[2]["proxies"] = node_obj.remarks
+      proxy_groups[3]["proxies"] = node_obj.remarks
+      proxy_groups[4]["proxies"] = node_obj.remarks
+      configs["rules"] = cls.read_yaml('./yaml_files/custom_rules.yaml')["rules"]
+    else:
+      return
+    if node_obj.HK_remarks:
+      proxy_groups[26]["proxies"] = node_obj.HK_remarks
+    if node_obj.JP_remarks:
+      proxy_groups[27]["proxies"] = node_obj.JP_remarks
+    if node_obj.US_remarks:
+      proxy_groups[28]["proxies"] = node_obj.US_remarks
+    if node_obj.TW_remarks:
+      proxy_groups[29]["proxies"] = node_obj.TW_remarks
+    if node_obj.SG_remarks:
+      proxy_groups[30]["proxies"] = node_obj.SG_remarks
+    if node_obj.KR_remarks:
+      proxy_groups[31]["proxies"] = node_obj.KR_remarks
+    configs["proxy-groups"] = proxy_groups
 
-    for url in cls.urls:
-      cc = cls.get_scribe(url.strip())
-      if cc:
-        cls.o_node.parse(cc.split('\n'))
+    yaml_str = re.sub(r'[\r\n]+', '\n', cls.to_yaml(configs), flags=re.S) 
+    yaml_str = re.sub(r'^(.*?-)[\s\r\n]+', r'\1 ', yaml_str, flags=re.M)
+    with open(f"sub/{key}.yaml", "w+", encoding="utf-8") as f:
+      f.write(yaml_str)
+    os.system(f"tail -n +2 yaml_files/rules.yaml >> sub/{key}.yaml")
+
+  @classmethod
+  def run(cls):
+    os.makedirs('sub', exist_ok=True)
+    with open("urls.csv", "r", encoding="utf-8") as urls_path:
+      urls_csv = csv.reader(urls_path)
+      for row in urls_csv:
+        key, url, valid = row
+        cc = cls.get_scribe(url.strip())
+        if valid and cc:
+          _urls = cc.split('\n')
+          cls.urls_pools += _urls
+          cls.get_single_sub(key, _urls)
     
     for file in os.listdir(cls.local_dir):
+      key = os.path.splitext(os.path.basename(file))[0]
       cc = cls.read_local(os.path.join(cls.local_dir,  file))
       if cc:
-        cls.o_node.parse(cc.split('\n'))
+        _urls = cc.split('\n')
+        cls.urls_pools += _urls
+        cls.get_single_sub(key, _urls)
 
-    if cls.o_node.nodes:
-      cls.configs["proxies"] = cls.o_node.nodes
-      proxy_groups[1]["proxies"] = cls.o_node.remarks
-      proxy_groups[2]["proxies"] = cls.o_node.remarks
-      proxy_groups[3]["proxies"] = cls.o_node.remarks
-      proxy_groups[4]["proxies"] = cls.o_node.remarks
-      cls.configs["rules"] = cls.read_yaml('./yaml_files/custom_rules.yaml')["rules"]
-    if cls.o_node.HK_remarks:
-      proxy_groups[26]["proxies"] = cls.o_node.HK_remarks
-    if cls.o_node.JP_remarks:
-      proxy_groups[27]["proxies"] = cls.o_node.JP_remarks
-    if cls.o_node.US_remarks:
-      proxy_groups[28]["proxies"] = cls.o_node.US_remarks
-    if cls.o_node.TW_remarks:
-      proxy_groups[29]["proxies"] = cls.o_node.TW_remarks
-    if cls.o_node.SG_remarks:
-      proxy_groups[30]["proxies"] = cls.o_node.SG_remarks
-    if cls.o_node.KR_remarks:
-      proxy_groups[31]["proxies"] = cls.o_node.KR_remarks
-    cls.configs["proxy-groups"] = proxy_groups
-
-
-    # cls.write_yaml(cls.configs, 'clash.yaml')
-    yaml_str = re.sub(r'[\r\n]+', '\n', cls.to_yaml(cls.configs), flags=re.S) 
-    yaml_str = re.sub(r'^(.*?-)[\s\r\n]+', r'\1 ', yaml_str, flags=re.M)
-    with open('clash.yaml', "w+", encoding="utf-8") as f:
-      f.write(yaml_str)
-    # os.system("cat yaml_files/rules.yaml >> clash.yaml")
-    os.system("tail -n +2 yaml_files/rules.yaml >> clash.yaml")
-
+    cls.get_single_sub("clash", cls.urls_pools)
 
 
 
