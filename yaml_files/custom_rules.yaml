@@ -1,4 +1,6 @@
 rules:
+  - DOMAIN-SUFFIX,streamtape.com,DIRECT
+  - DOMAIN-SUFFIX,tapecontent.net,DIRECT
   - DOMAIN-SUFFIX,cdn-centaurus.com,♻️ 自动选择
   - DOMAIN-SUFFIX,us.kg,♻️ 自动选择
   - DOMAIN-SUFFIX,milocdn.com,♻️ 自动选择
@@ -49,8 +51,6 @@ rules:
   - DOMAIN-SUFFIX,xascdn.li,♻️ 自动选择
   - DOMAIN-SUFFIX,vpdmm.cc,♻️ 自动选择
   - DOMAIN-SUFFIX,91watchav.com,♻️ 自动选择
-  - DOMAIN-SUFFIX,869456160.tapecontent.net,♻️ 自动选择
-  - DOMAIN-SUFFIX,2448409167.tapecontent.net,♻️ 自动选择
   - DOMAIN-SUFFIX,leech.ninja,♻️ 自动选择
   - DOMAIN-SUFFIX,pradoi.com,♻️ 自动选择
   - DOMAIN-SUFFIX,roshy.tv,♻️ 自动选择
@@ -152,7 +152,6 @@ rules:
   - DOMAIN-SUFFIX,javgiga.com,♻️ 自动选择
   - DOMAIN-SUFFIX,www.openwall.com,♻️ 自动选择
   - DOMAIN-SUFFIX,bestjavporn.me,♻️ 自动选择
-  - DOMAIN-SUFFIX,860718363.tapecontent.net,♻️ 自动选择
   - DOMAIN-SUFFIX,skrbtgb.top,♻️ 自动选择
   - DOMAIN-SUFFIX,javplayer.org,♻️ 自动选择
   - DOMAIN-SUFFIX,sextw-net.webpkgcache.com,♻️ 自动选择
@@ -198,7 +197,7 @@ rules:
   - DOMAIN-SUFFIX,v2raya.org,♻️ 自动选择
   - DOMAIN-SUFFIX,sehuatang.org,♻️ 自动选择
   - DOMAIN-SUFFIX,baidu1.com,♻️ 自动选择
-  - DOMAIN-SUFFIX,javdb.com,♻️ 自动选择
+  - DOMAIN-KEYWORD,javdb,🇭🇰 香港节点
   - DOMAIN-SUFFIX,supjav.com,♻️ 自动选择
   - DOMAIN-SUFFIX,www.sehuatang.org,♻️ 自动选择
   - DOMAIN-SUFFIX,7mmtv.sx,♻️ 自动选择
