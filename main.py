@@ -130,7 +130,7 @@ class ClashConfig:
       for row in urls_csv:
         key, url, valid = row
         cc = cls.get_scribe(url.strip())
-        if valid and cc:
+        if valid == '1' and cc:
           _urls = cc.split('\n')
           cls.urls_pools += _urls
           cls.get_single_sub(key, _urls)
