@@ -129,8 +129,10 @@ class ClashConfig:
       urls_csv = csv.reader(urls_path)
       for row in urls_csv:
         key, url, valid = row
+        if valid != '1':
+          continue
         cc = cls.get_scribe(url.strip())
-        if valid == '1' and cc:
+        if cc:
           _urls = cc.split('\n')
           cls.urls_pools += _urls
           cls.get_single_sub(key, _urls)
