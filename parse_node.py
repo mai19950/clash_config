@@ -12,7 +12,7 @@ class ParseNode:
     try:
       # 先处理 URL 编码
       decoded_url = urllib.parse.unquote(url)
-      ss_link = decoded_url[5:]  # 去掉 "ss://"
+      ss_link = re.sub(r"^ss://", '', decoded_url)
       
       # 分离认证信息和服务器信息
       if '@' not in ss_link:
@@ -87,7 +87,7 @@ class ParseNode:
   @staticmethod
   def vless(url: str) -> Tuple[str, Dict]:
     try:
-      vless_link = url[8:]  # 去掉 "vless://"      
+      vless_link = re.sub(r"^vless://", '', url)  # 去掉 "vless://"      
       # 分离 UUID 和其他信息
       uuid_info, rest_remark = vless_link.split('@', 1)
       uuid = uuid_info      
@@ -156,7 +156,7 @@ class ParseNode:
 
   @staticmethod
   def trojan(url: str) -> Tuple[str, dict]:
-    trojan_link = url[8:]  # 去掉 "trojan://"
+    trojan_link = re.sub(r"^trojan://", '', url)  # 去掉 "trojan://"
     # 分离密码和其他信息
     password_info, rest = trojan_link.split('@')
     password = password_info
@@ -192,7 +192,7 @@ class ParseNode:
 
   @staticmethod
   def vmess(url: str) -> Tuple[str, dict]:
-    vmess_link = url[8:]  # 去掉 "vmess://"
+    vmess_link = re.sub(r"^vmess://", '', url)  # 去掉 "vmess://"
     
     # Base64 解码
     decoded = base64.b64decode(vmess_link).decode('utf-8')
@@ -224,56 +224,75 @@ class ParseNode:
     return ( remarks, clash_node )
 
   @staticmethod
-  def hysteria2(url: str) -> Tuple[str, dict]:
-    # 去掉 "hysteria2://" 前缀
-    hysteria2_link = url[11:]  # len("hysteria2://") = 11
-    # 分离认证信息和剩余部分
-    auth_info, rest = hysteria2_link.split('@', 1)    
-    # 密码是 auth_info 部分
-    password = auth_info    
-    # 分离服务器信息和查询参数
-    if '?' in rest:
-      server_info, query = rest.split('?', 1)
-    else:
-      server_info, query = rest, ''    
-    # 解析服务器地址和端口
-    server, port = server_info.rsplit(':', 1)
-    port = int(port.strip('/'))    
-    # 解析查询参数
-    params = urllib.parse.parse_qs(query)    
-    # 获取查询参数
-    sni = params.get('sni', [''])[0]
-    insecure = params.get('insecure', ['0'])[0] == '1'    
-    # 提取备注（可能在 # 后面）
-    if '#' in query:
-      remarks_part = query.split('#')[-1]
-      remarks = urllib.parse.unquote(remarks_part)
-    else:
-      remarks = f"{server}:{port}"    
-    # 构建 Clash 配置
-    clash_node = {
-        "name": remarks,
+  def hysteria2(url: str) -> Tuple[str, Dict]:
+    try:
+      # 先解码整个URL
+      decoded_url = urllib.parse.unquote(url)
+            # 去掉协议头
+      hysteria_link = re.sub(r"^hysteria2://", '', decoded_url)
+      
+      # 分割密码和服务器部分
+      if '@' not in hysteria_link:
+        raise ValueError("Missing @ in Hysteria2 URL")
+      
+      password_part, server_part = hysteria_link.split('@', 1)
+      password = password_part # 保留原始密码，不加斜杠
+      
+      # 先分离备注部分（从最后开始找#）
+      if '#' in server_part:
+        server_part, remarks = server_part.rsplit('#', 1)
+        remarks = urllib.parse.unquote(remarks)
+      else:
+        remarks = f"Hysteria2-{server_part.split(':')[0]}"
+      
+      # 再分离查询参数
+      if '?' in server_part:
+        server_port_part, query_part = server_part.split('?', 1)
+      else:
+        server_port_part, query_part = server_part, ''
+      
+      # 解析服务器和端口
+      server, port = server_port_part.rsplit(':', 1)
+      port = int(port.strip('/'))
+      
+      # 解析查询参数
+      params = urllib.parse.parse_qs(query_part)
+      
+      # 构建配置字典
+      clash_node = {
+        "name": remarks.strip(),
         "type": "hysteria2",
         "server": server,
         "port": port,
-        "password": password,
-        "sni": sni,
-        "skip-cert-verify": insecure,
-    }    
-    # 移除空值参数
-    clash_node = {k: v for k, v in clash_node.items() if v or k == 'port'}
-    return (remarks, clash_node)
+        "password": password,  # 直接使用原始密码
+        "skip-cert-verify": params.get('insecure', ['0'])[0] == '1'
+      }
+      
+      # 处理sni参数
+      if 'sni' in params and params['sni'][0]:
+        clash_node["sni"] = params['sni'][0]
+      
+      # 处理obfs参数
+      if 'obfs' in params and params['obfs'][0]:
+        clash_node["obfs"] = params['obfs'][0]
+        if 'obfs-password' in params and params['obfs-password'][0]:
+          obfs_pwd = params['obfs-password'][0]
+          try:
+            decoded_pwd = base64.b64decode(obfs_pwd).decode('utf-8')
+            clash_node["obfs-password"] = decoded_pwd
+          except:
+            clash_node["obfs-password"] = obfs_pwd
+      
+      return (remarks, clash_node)
+    
+    except Exception as e:
+      raise ValueError(f"Failed to parse Hysteria2 URL: {str(e)}")
 
   @staticmethod
   def socks5(url: str) -> Tuple[str, Dict]:
     # 兼容 socks5:// 和 socks:// 前缀
-    if url.startswith("socks5://"):
-      url = url[8:]  # 去掉 "socks5://"
-    elif url.startswith("socks://"):
-      url = url[7:]  # 去掉 "socks://"
-    else:
-      raise ValueError("Invalid SOCKS URL format")
-    
+    url = re.sub(r"^socks5?://", '', url)
+
     # 分离认证信息（如果有）和服务器信息
     if '@' in url:
       auth_info, server_info = url.split('@', 1)
