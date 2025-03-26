@@ -8,78 +8,151 @@ from typing import Dict, List, Tuple
 class ParseNode:
 
   @staticmethod
-  def ss(url: str) -> Tuple[str, dict]:
-    ss_link = url[5:]  # 去掉 "ss://"
-    # 进行 Base64 解码，添加必要的填充
-    base64_str = ss_link.split('@')[0]
-    padding = len(base64_str) % 4
-    if padding != 0:
-      base64_str += '=' * (4 - padding)
-    # 进行 Base64 解码
-    decoded_bytes = base64.b64decode(base64_str)
-    decoded_string = decoded_bytes.decode('utf-8')
-
-    # 提取加密方式和密码
-    server, port_with_remark = ss_link.split('@')[1].split(':', 1)
-    method, password = decoded_string.split(':')
-    port, remark = port_with_remark.split('#')
-    remarks = urllib.parse.unquote(remark).strip()
-
-    # 构建 Clash 配置
-    clash_node = {
-      "name": remarks,
-      "server": server.rsplit(":", 1)[0],
-      "port": port,
-      "type": "ss",
-      "cipher": method,
-      "password": password
-    }
-
-    return ( remarks, clash_node )
+  def ss(url: str) -> Tuple[str, Dict]:
+    try:
+      # 先处理 URL 编码
+      decoded_url = urllib.parse.unquote(url)
+      ss_link = decoded_url[5:]  # 去掉 "ss://"
+      
+      # 分离认证信息和服务器信息
+      if '@' not in ss_link:
+        raise ValueError("Invalid SS URL format")
+      
+      base64_part, server_part = ss_link.split('@', 1)
+      
+      # Base64 解码处理
+      padding = len(base64_part) % 4
+      if padding != 0:
+        base64_part += '=' * (4 - padding)
+      decoded = base64.b64decode(base64_part).decode('utf-8')
+      
+      # 提取加密方式和密码
+      if ':' not in decoded:
+        raise ValueError("Invalid SS auth format")
+      method, password = decoded.split(':', 1)
+      
+      # 先分离备注部分
+      if '#' in server_part:
+        server_part, remarks = server_part.split('#', 1)
+        remarks = urllib.parse.unquote(remarks)
+      else:
+        remarks = f"SS-{server_part.split(':')[0]}"
+      
+      # 再分离查询参数
+      if '?' in server_part:
+        server_port_part, query_part = server_part.split('?', 1)
+      else:
+        server_port_part, query_part = server_part, ''
+      
+      # 解析服务器地址和端口
+      server, port = server_port_part.rsplit(':', 1)
+      port = int(port.strip('/'))
+      
+      # 构建 Clash 配置
+      clash_node = {
+        "name": remarks.strip(),
+        "type": "ss",
+        "server": server,
+        "port": port,
+        "cipher": method,
+        "password": password,
+      }
+      
+      # 处理 obfs 插件
+      if query_part:
+        params = urllib.parse.parse_qs(query_part)
+        if 'plugin' in params:
+          plugin = urllib.parse.unquote(params['plugin'][0])
+          if 'obfs-local' in plugin:
+            # 解析 obfs 参数
+            plugin_opts = {}
+            for param in plugin.split(';')[1:]:
+              if '=' in param:
+                k, v = param.split('=', 1)
+                plugin_opts[k] = v
+            
+            clash_node.update({
+              "plugin": "obfs",
+              "plugin-opts": {
+                "mode": plugin_opts.get('obfs', 'http'),
+                "host": plugin_opts.get('obfs-host', '')
+              }
+            })
+      
+      return (remarks, clash_node)
+    
+    except Exception as e:
+      raise ValueError(f"Failed to parse SS URL: {str(e)}")
 
   @staticmethod
-  def vless(url: str) -> Tuple[str, dict]:
-    vless_link = url[8:]  # 去掉 "vless://"
-    # 分离 UUID 和其他信息
-    uuid_info, rest_remark = vless_link.split('@')
-    rest, remarks = rest_remark.split('#')
-    uuid = uuid_info
-    # 解析主机地址和端口
-    server_info, query = rest.split('?')
-    server, port = server_info.rsplit(":", 1)
-    port = int(port)
-    # 解析查询参数
-    params = urllib.parse.parse_qs(query)    
-    # 获取查询参数（加密方法，安全性，sni 等）
-    encryption = params.get('encryption', ['none'])[0]
-    security = params.get('security', ['tls'])[0]
-    sni = params.get('sni', [''])[0]
-    alpn = params.get('alpn', [''])[0]
-    fp = params.get('fp', [''])[0]
-    host = params.get('host', [''])[0]
-    path = urllib.parse.unquote(params.get('path', [''])[0])
-    # 提取备注
-    remarks = urllib.parse.unquote(remarks).strip()
-    # 构建 Clash 配置
-    clash_node = {
-      "type": "vless",
-      "name": remarks,
-      "server": server,
-      "port": port,
-      "uuid": uuid,
-      "skip-cert-verify": True,  # 跳过证书验证
-      "udp": True,  # 支持 UDP
-      "tls": True if security == "tls" else False,  # TLS 安全连接
-      "network": "ws",  # WebSocket 协议
-      "servername": sni,  # 服务器名称
-      "ws-opts": {
-        "path": path,  # WebSocket 路径
-        "headers": {
-          "host": host  # WebSocket 请求头的 host
-        }
-      }
-    }
-    return ( remarks, clash_node )
+  def vless(url: str) -> Tuple[str, Dict]:
+    try:
+      vless_link = url[8:]  # 去掉 "vless://"      
+      # 分离 UUID 和其他信息
+      uuid_info, rest_remark = vless_link.split('@', 1)
+      uuid = uuid_info      
+      # 分离服务器信息和查询参数
+      if '#' in rest_remark:
+        rest, remarks = rest_remark.split('#', 1)
+      else:
+        rest = rest_remark
+        remarks = ""      
+      # 解析主机地址和端口
+      if '?' in rest:
+        server_info, query = rest.split('?', 1)
+      else:
+        server_info = rest
+        query = ""      
+      server, port = server_info.rsplit(":", 1)
+      port = int(port)      
+      # 解析查询参数
+      params = urllib.parse.parse_qs(query)      
+      # 获取查询参数
+      encryption = params.get('encryption', ['none'])[0]
+      security = params.get('security', [''])[0]
+      sni = params.get('sni', [''])[0]
+      alpn = params.get('alpn', [''])[0]
+      fp = params.get('fp', [''])[0]
+      type_ = params.get('type', [''])[0]
+      host = params.get('host', [''])[0]
+      path = params.get('path', [''])[0]      
+      # 处理特殊字符的 path
+      if path:
+        path = urllib.parse.unquote(path[0])      
+      # 提取备注
+      remarks = urllib.parse.unquote(remarks).strip() if remarks else f"VLESS-{server}:{port}"      
+      # 构建 Clash 配置
+      clash_node = {
+        "type": "vless",
+        "name": remarks,
+        "server": server,
+        "port": port,
+        "uuid": uuid,
+        "skip-cert-verify": True,
+        "udp": True,
+        "tls": security == "tls",
+        "network": type_ if type_ else "tcp",
+        "servername": sni if sni else host,
+      }      
+      # 添加 WebSocket 选项
+      if type_ == "ws":
+        ws_opts = {}
+        if path:
+          ws_opts["path"] = path
+        if host:
+          ws_opts["headers"] = {"Host": host}
+        if ws_opts:
+          clash_node["ws-opts"] = ws_opts      
+      # 添加 gRPC 选项
+      elif type_ == "grpc":
+        if path:
+          clash_node["grpc-opts"] = {
+            "grpc-service-name": path.lstrip('/')
+          }      
+      return (remarks, clash_node)    
+
+    except Exception as e:
+      raise ValueError(f"Failed to parse VLESS URL: {str(e)}")
 
   @staticmethod
   def trojan(url: str) -> Tuple[str, dict]:
@@ -150,6 +223,94 @@ class ParseNode:
     }
     return ( remarks, clash_node )
 
+  @staticmethod
+  def hysteria2(url: str) -> Tuple[str, dict]:
+    # 去掉 "hysteria2://" 前缀
+    hysteria2_link = url[11:]  # len("hysteria2://") = 11
+    # 分离认证信息和剩余部分
+    auth_info, rest = hysteria2_link.split('@', 1)    
+    # 密码是 auth_info 部分
+    password = auth_info    
+    # 分离服务器信息和查询参数
+    if '?' in rest:
+      server_info, query = rest.split('?', 1)
+    else:
+      server_info, query = rest, ''    
+    # 解析服务器地址和端口
+    server, port = server_info.rsplit(':', 1)
+    port = int(port.strip('/'))    
+    # 解析查询参数
+    params = urllib.parse.parse_qs(query)    
+    # 获取查询参数
+    sni = params.get('sni', [''])[0]
+    insecure = params.get('insecure', ['0'])[0] == '1'    
+    # 提取备注（可能在 # 后面）
+    if '#' in query:
+      remarks_part = query.split('#')[-1]
+      remarks = urllib.parse.unquote(remarks_part)
+    else:
+      remarks = f"{server}:{port}"    
+    # 构建 Clash 配置
+    clash_node = {
+        "name": remarks,
+        "type": "hysteria2",
+        "server": server,
+        "port": port,
+        "password": password,
+        "sni": sni,
+        "skip-cert-verify": insecure,
+    }    
+    # 移除空值参数
+    clash_node = {k: v for k, v in clash_node.items() if v or k == 'port'}
+    return (remarks, clash_node)
+
+  @staticmethod
+  def socks5(url: str) -> Tuple[str, Dict]:
+    # 兼容 socks5:// 和 socks:// 前缀
+    if url.startswith("socks5://"):
+      url = url[8:]  # 去掉 "socks5://"
+    elif url.startswith("socks://"):
+      url = url[7:]  # 去掉 "socks://"
+    else:
+      raise ValueError("Invalid SOCKS URL format")
+    
+    # 分离认证信息（如果有）和服务器信息
+    if '@' in url:
+      auth_info, server_info = url.split('@', 1)
+      if ':' in auth_info:
+        username, password = auth_info.split(':', 1)
+      else:
+        username, password = auth_info, ""  # 处理只有用户名的情况
+    else:
+      server_info = url
+      username, password = "", ""  # 无认证信息
+    
+    # 解析服务器地址和端口
+    if '#' in server_info:
+      server_part, remarks = server_info.split('#', 1)
+      server, port = server_part.rsplit(':', 1)
+      remarks = urllib.parse.unquote(remarks)
+    else:
+      server, port = server_info.rsplit(':', 1)
+      remarks = f"SOCKS-{server}:{port}"
+    
+    port = int(port.strip('/'))
+    
+    # 构建 Clash 配置
+    clash_node = {
+      "name": remarks,
+      "type": "socks5",
+      "server": server,
+      "port": port,
+    }
+    
+    # 添加认证信息（如果有）
+    if username:
+      clash_node["username"] = username
+    if password:
+      clash_node["password"] = password
+    
+    return (remarks, clash_node)
 
 class CollectNodes(ParseNode):
 
@@ -199,6 +360,10 @@ class CollectNodes(ParseNode):
         self.parse_node = self.trojan
       elif url.startswith("vmess://"):
         self.parse_node = self.vmess
+      elif url.startswith("hysteria2://"):
+        self.parse_node = self.hysteria2
+      elif url.startswith("socks"):
+        self.parse_node = self.socks5
       else:
         continue
       try:

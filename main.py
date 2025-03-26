@@ -33,7 +33,7 @@ class ClashConfig:
         d_bytes = base64.b64decode(nodes)
         return d_bytes.decode('utf-8')
       except Exception as e:
-        print('解码错误：', e.args)
+        print('local解码错误：', e.args)
         return nodes
 
   # configs: dict = {}
@@ -78,7 +78,7 @@ class ClashConfig:
             d_bytes = base64.b64decode(nodes)
             return d_bytes.decode('utf-8')
           except Exception as e:
-            print('解码错误：', e.args)
+            print('scribe解码错误：', e.args)
             return nodes
         else:
           print("链接请求错误：", res.status_code, url)
@@ -129,8 +129,10 @@ class ClashConfig:
       urls_csv = csv.reader(urls_path)
       for row in urls_csv:
         key, url, valid = row
+        if valid != '1':
+          continue
         cc = cls.get_scribe(url.strip())
-        if valid and cc:
+        if cc:
           _urls = cc.split('\n')
           cls.urls_pools += _urls
           cls.get_single_sub(key, _urls)
@@ -144,7 +146,6 @@ class ClashConfig:
         cls.get_single_sub(key, _urls)
 
     cls.get_single_sub("clash", cls.urls_pools)
-
 
 
 if __name__ == '__main__':
