@@ -411,7 +411,7 @@ class CollectNodes(ParseNode):
       elif re.search(r'JP|日|日本|🇯🇵', remark_with, flags=re.I):
         # self.JP_nodes.append(node_str)
         self.JP_remarks.append(remark_with)
-      elif re.search(r'US|UM|美|美国|美國|🇺🇲', remark_with, flags=re.I):
+      elif re.search(r'US|UM|美|美国|美國|🇺🇲|🇺🇸', remark_with, flags=re.I):
         # self.US_nodes.append(node_str)
         self.US_remarks.append(remark_with)
       elif re.search(r'TW|台|臺|台湾|臺灣|🇨🇳|🇹🇼', remark_with, flags=re.I):
